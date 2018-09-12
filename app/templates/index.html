@@ -44,7 +44,7 @@
         <li class="nav-item" id="subsidies">
             <a class="nav-link" href="#">
                 <i class="tim-icons icon-coins"></i>
-                <p class="navigation-page">Субсидії</p>
+                <p class="navigation-page">Субвенція</p>
             </a>
         </li>
          <!-- your sidebar here -->
@@ -79,36 +79,11 @@
     <div class="content">
       <div class="container-fluid">
         <div class="row">
-          <div class="col-lg-12 col-md-12">
-            <div class="card">
-              <div class="card-body">
-                <form id="update-dashboard">
-                  <div class="row">
-                    <div class="col-lg-3 col-md-12">
-                      <div class="form-group">
-                        <label for="regions">Оберіть область</label>
-                        <select class="form-control" id="regions">
-                          {% for k,v in regions.items() %}
-                          <option value="{{ v }}">{{ k }}</option>
-                          {% endfor %}
-                        </select>
-                      </div>
-                    </div>
-<!--                     <div class="col-lg-3 col-md-12">
-                      <button type="submit" class="btn btn-info">Оновити</button>
-                    </div> -->
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- DataViz -->
-        <div class="row">
           <div class="col-lg-6 col-md-12">
             <div class="card">
               <div class="card-wrapper">
                 <div id="map"></div>
+                <div id="map-info"></div>
               </div>
             </div>    
           </div>
@@ -116,6 +91,22 @@
             <div class="card">
               <div class="card-wrapper">
                 <div id="timeline"></div>
+              </div>
+              <div class="card-body" style="text-align: center;">
+                <form id="change-timeline">
+                  <div class="form-check form-check-radio form-check-inline">
+                    <label class="form-check-label">
+                      <input class="form-check-input" type="radio" name="dataset" id="by-month" value="0" checked> По місяцях
+                      <span class="form-check-sign"></span>
+                    </label>
+                  </div>
+                  <div class="form-check form-check-radio form-check-inline">
+                    <label class="form-check-label">
+                      <input class="form-check-input" type="radio" name="dataset" id="cimilative" value="1"> Кумулятивно
+                      <span class="form-check-sign"></span>
+                    </label>
+                  </div>
+                </form>
               </div>
             </div> 
           </div>
@@ -215,6 +206,12 @@
     </div>
   </div>
 </div>
+
+<script>
+  var dataTimeLine = {{ dates|tojson }};
+  var dataMap = {{ map_ukr|tojson }}
+</script>
+
 <!--   Core JS Files   -->
 <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.min.js') }}" type="text/javascript"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/popper.min.js') }}" type="text/javascript"></script>
@@ -222,19 +219,19 @@
 <script type="text/javascript" src="{{ url_for('static', filename='js/perfect-scrollbar.jquery.min.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/black-dashboard.min.js') }}"></script>
 
-<!-- Custim Js -->
+<!-- Custom Js -->
 <script type="text/javascript" src="{{ url_for('static', filename='js/script.js') }}"></script>
 
 <!-- AmMaps -->
 <script src="https://www.amcharts.com/lib/3/ammap.js"></script>
 <script src="https://www.amcharts.com/lib/3/maps/js/ukraineLow.js"></script>
 <script src="https://www.amcharts.com/lib/3/plugins/export/export.min.js"></script>
-<script src="https://www.amcharts.com/lib/3/themes/light.js"></script>
 
 <!-- AmCharts -->
 <script src="https://www.amcharts.com/lib/3/amcharts.js"></script>
 <script src="https://www.amcharts.com/lib/3/serial.js"></script>
 <script src="https://www.amcharts.com/lib/3/themes/light.js"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/uk.js') }}"></script>
 
 </body>
 </html>

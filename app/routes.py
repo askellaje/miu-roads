@@ -1,3 +1,6 @@
+from itertools import groupby, accumulate
+from operator import itemgetter
+
 from flask import render_template
 from flask import request
 from flask import jsonify
@@ -63,23 +66,68 @@ def serialize_lots(s):
 @app.route('/')
 @app.route('/index')
 def index():
-	trans = Transactions.query.filter(Transactions.id_region == 'UA-05').filter(Transactions.kevk == 2281).all()
-	lots = Prozzoro.query.filter(Prozzoro.id_region == 'UA-05').filter(Transactions.kevk == 2281).all()
-	return render_template('index.html', trans=trans, lots=lots, regions=regs)
+	# fill in tables
+	trans = Transactions.query.filter(Transactions.id_region == "UA-05").filter(Transactions.kevk == 2281).all()
+	lots = Prozzoro.query.filter(Transactions.id_region == "UA-05").filter(Transactions.kevk == 2281).all()
 
-@app.route('/update-tables', methods=['POST'])
-def update_tables():
+	# launch map
+	regions_trans = db.session.query(Transactions.id_region, label('sum', func.sum(Transactions.amount))).filter(Transactions.kevk == 2281).group_by(Transactions.id_region).all()
+
+	# launch timeline -> start regions is UA-05
+	dates = db.session.query(Transactions.doc_date, label('sum', func.sum(Transactions.amount))).filter(Transactions.id_region == 'UA-05').filter(Transactions.kevk == 2281).group_by(Transactions.doc_date).all()
+	dates = [(x[0][:7],x[1]) for x in dates]
+	dates = [(x,sum(map(itemgetter(1),y))) for x,y in groupby(dates, itemgetter(0))]
+	# cumulative values
+	cum_vals = list(accumulate([i[1] for i in dates]))
+
+	return render_template(
+			'index.html', 
+			trans=trans, 
+			lots=lots, 
+			regions=regs, 
+			dates={'dates': [[{"date": d[0], "value": round(d[1], 2)} for d in dates], [{"date": d[0], "value": round(c, 2)} for d,c in zip(dates, cum_vals)]]}, 
+			map_ukr={'map': [{"id": t[0], "value": round(t[1], 2)} for t in regions_trans]}
+		)
+
+@app.route('/update', methods=['POST'])
+def update():
 	region = request.form['region']
 	page = request.form['page']
 	lots = Prozzoro.query.filter(Prozzoro.id_region == region).all()
 	if page == 'ukravto':
 		trans = Transactions.query.filter(Transactions.id_region == region).filter(Transactions.kevk == 2281).all()
+		
 		regions_trans = db.session.query(Transactions.id_region, label('sum', func.sum(Transactions.amount))).filter(Transactions.kevk == 2281).group_by(Transactions.id_region).all()
+		
 		dates = db.session.query(Transactions.doc_date, label('sum', func.sum(Transactions.amount))).filter(Transactions.id_region == region).filter(Transactions.kevk == 2281).group_by(Transactions.doc_date).all()
-		return jsonify({'trans' : [serialize_trans(t) for t in trans], 'lots': [serialize_lots(l) for l in lots], 'map': [{"id": t[0], "value": t[1]} for t in regions_trans], 'dates': [{"date": d[0], "value": d[1]} for d in dates]})
+		dates = [(x[0][:7],x[1]) for x in dates]
+		dates = [(x,sum(map(itemgetter(1),y))) for x,y in groupby(dates, itemgetter(0))]
+		# cumulative values
+		cum_vals = list(accumulate([i[1] for i in dates]))
+
+		return jsonify({
+				'trans' : [serialize_trans(t) for t in trans], 
+				'lots': [serialize_lots(l) for l in lots], 
+				'map': [{"id": t[0], "value": round(t[1])} for t in regions_trans], 
+				'dates': [[{"date": d[0], "value": round(d[1], 2)} for d in dates], [{"date": d[0], "value": round(c, 2)} for d,c in zip(dates, cum_vals)]]
+			})
 	else:
 		trans = Transactions.query.filter(Transactions.id_region == region).filter(Transactions.kevk != 2281).all()
+		
 		regions_trans = db.session.query(Transactions.id_region, label('sum', func.sum(Transactions.amount))).filter(Transactions.kevk != 2281).group_by(Transactions.id_region).all()
+		
 		dates = db.session.query(Transactions.doc_date, label('sum', func.sum(Transactions.amount))).filter(Transactions.id_region == region).filter(Transactions.kevk != 2281).group_by(Transactions.doc_date).all()
-		return jsonify({'trans' : [serialize_trans(t) for t in trans], 'lots': [serialize_lots(l) for l in lots], 'map': [{"id": t[0], "value": t[1]} for t in regions_trans], 'dates': [{"date": d[0], "value": d[1]} for d in dates]})
+		
+		dates = [(x[0][:7],x[1]) for x in dates]
+		dates = [(x,sum(map(itemgetter(1),y))) for x,y in groupby(dates, itemgetter(0))]
+		# cumulative values
+		cum_vals = list(accumulate([i[1] for i in dates]))
+
+		return jsonify({
+				'trans' : [serialize_trans(t) for t in trans], 
+				'lots': [serialize_lots(l) for l in lots], 
+				'map': [{"id": t[0], "value": round(t[1])} for t in regions_trans], 
+				'dates': [[{"date": d[0], "value": round(d[1], 2)} for d in dates], [{"date": d[0], "value": round(c, 2)} for d,c in zip(dates, cum_vals)]]
+			})
+
 	return jsonify({'error' : 'bad'})

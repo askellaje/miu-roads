@@ -15,3 +15,20 @@
 .card-wrapper {
 	padding: 10px;
 }
+
+/* remove credit */
+.amcharts-chart-div a {
+	display:none !important;
+}
+
+/* map-info */
+#map-info {
+  width: 150px;
+  height: 150px;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  border: 3px solid #fff;
+  opacity: 0.9;
+  background: #ccc;
+}
