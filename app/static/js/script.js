@@ -234,12 +234,6 @@ function drawTimeLine(data, regionSubtitle, budget) {
           "valueField": budget ? "budget" : null,
           "lineThickness": 2,
           "lineColor": "#00bf9a",
-          "bullet": "round",
-          "bulletBorderAlpha": 1,
-          "bulletColor": "#FFFFFF",
-          "bulletSize": 3,
-          "hideBulletsCount": 50,
-          "useLineColorForBulletBorder": true,
           "balloonText":`<span style='font-size:12px;'>[[value]]</span>`
         }
       ],
