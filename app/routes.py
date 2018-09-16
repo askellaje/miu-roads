@@ -12,30 +12,57 @@ from app import app
 from app import db
 from app.models import Transactions, Prozzoro
 
-regs = {'Вінницька': 'UA-05',
-		'Волинська': 'UA-07',
-		'Дніпропетровська': 'UA-12',
-		'Донецька': 'UA-14',
-		'Житомирська': 'UA-18',
-		'Закарпатська': 'UA-21',
-		'Запорізька': 'UA-23',
-		'Івано-Франківська': 'UA-26',
-		'Київська': 'UA-32',
-		'Кіровоградська': 'UA-35',
-		'Луганська': 'UA-09',
-		'Львівська': 'UA-46',
-		'Миколаївська': 'UA-48',
-		'Одеська': 'UA-51',
-		'Полтавська': 'UA-53',
-		'Рівненська': 'UA-56',
-		'Сумська': 'UA-59',
-		'Тернопільська': 'UA-61',
-		'Харківська': 'UA-63',
-		'Херсонська': 'UA-65',
-		'Хмельницька': 'UA-68',
-		'Черкаська': 'UA-71',
-		'Чернівецька': 'UA-77',
-		'Чернігівська': 'UA-74'}
+regs = {'UA-05': 'Вінницька',
+		'UA-07': 'Волинська',
+		'UA-12': 'Дніпропетровська',
+		'UA-14': 'Донецька',
+		'UA-18': 'Житомирська',
+		'UA-21': 'Закарпатська',
+		'UA-23': 'Запорізька',
+		'UA-26': 'Івано-Франківська',
+		'UA-32': 'Київська',
+		'UA-35': 'Кіровоградська',
+		'UA-09': 'Луганська',
+		'UA-46': 'Львівська',
+		'UA-48': 'Миколаївська',
+		'UA-51': 'Одеська',
+		'UA-53': 'Полтавська',
+		'UA-56': 'Рівненська',
+		'UA-59': 'Сумська',
+		'UA-61': 'Тернопільська',
+		'UA-63': 'Харківська',
+		'UA-65': 'Херсонська',
+		'UA-68': 'Хмельницька',
+		'UA-71': 'Черкаська',
+		'UA-77': 'Чернівецька',
+		'UA-74': 'Чернігівська'}
+
+regions_budgets = {
+	'UA-05': {'subvention': 623809700, 'ukravto': 1069388057},
+	'UA-07': {'subvention': 393913500, 'ukravto': 675280286},
+	'UA-09': {'subvention': 352620400, 'ukravto': 604492114},
+	'UA-12': {'subvention': 553445000, 'ukravto': 948762857},
+	'UA-14': {'subvention': 557536700, 'ukravto': 955777200},
+	'UA-18': {'subvention': 617157300, 'ukravto': 1057983943},
+	'UA-21': {'subvention': 218740300, 'ukravto': 374983371},
+	'UA-23': {'subvention': 479704900, 'ukravto': 822351257},
+	'UA-26': {'subvention': 278907100, 'ukravto': 478126457},
+	'UA-32': {'subvention': 548968300, 'ukravto': 941088514},
+	'UA-35': {'subvention': 381647300, 'ukravto': 654252514},
+	'UA-46': {'subvention': 583215000, 'ukravto': 999797143},
+	'UA-48': {'subvention': 287099500, 'ukravto': 492170571},
+	'UA-51': {'subvention': 425698000, 'ukravto': 729768000},
+	'UA-53': {'subvention': 588363200, 'ukravto': 1008622629},
+	'UA-56': {'subvention': 281342500, 'ukravto': 482301429},
+	'UA-59': {'subvention': 457482500, 'ukravto': 784255714},
+	'UA-61': {'subvention': 315105700, 'ukravto': 540181200},
+	'UA-63': {'subvention': 656185200, 'ukravto': 1124888914},
+	'UA-65': {'subvention': 319779400, 'ukravto': 548193257},
+	'UA-68': {'subvention': 456533500, 'ukravto': 782628857},
+	'UA-71': {'subvention': 391451300, 'ukravto': 671059371},
+	'UA-74': {'subvention': 426199400, 'ukravto': 730627543},
+	'UA-77': {'subvention': 182873000, 'ukravto': 313496571}
+ }
 
 def serialize_trans(s):
 	return {
@@ -60,44 +87,63 @@ def serialize_lots(s):
 		'sum_win': s.sum_win,
 		'cpv': s.cpv,
 		'porog': s.porog,
-		'id_region': s.id_region
+		'id_region': s.id_region,
+		'region_name': regs[s.id_region]
 	}
+
+# prework for the map
+regions_trans = db.session.query(Transactions.id_region, Transactions.kevk, label('sum', func.sum(Transactions.amount))).group_by(Transactions.id_region, Transactions.kevk).all()
+
+ukravto = [(i[0], round(i[2], 2)) for i in regions_trans if i[1] == 2281]
+ukravto = [{"id": t[0], "value": t[1]} for t in ukravto]
+
+subvention = [(i[0], round(i[2], 2)) for i in regions_trans if i[1] != 2281]
+subvention = [(x,sum(map(itemgetter(1),y))) for x,y in groupby(subvention, itemgetter(0))]
+subvention = [{"id": t[0], "value": t[1]} for t in subvention]
 
 @app.route('/')
 @app.route('/index')
 def index():
-	# fill in tables
-	trans = Transactions.query.filter(Transactions.id_region == "UA-05").filter(Transactions.kevk == 2281).all()
-	lots = Prozzoro.query.filter(Transactions.id_region == "UA-05").filter(Transactions.kevk == 2281).all()
+	return render_template('index.html', map_ukr={'map': [ukravto, subvention]})
 
-	# launch map
-	regions_trans = db.session.query(Transactions.id_region, label('sum', func.sum(Transactions.amount))).filter(Transactions.kevk == 2281).group_by(Transactions.id_region).all()
+@app.route('/start', methods=['POST'])
+def start():
+	region = request.form['region']
+	page = request.form['page']
+	if region and page:
+		lots = Prozzoro.query.filter(Prozzoro.id_region == region).all()
+		# fill in tables
+		trans = Transactions.query.filter(Transactions.id_region == region).filter(Transactions.kevk == 2281).all()
 
-	# launch timeline -> start regions is UA-05
-	dates = db.session.query(Transactions.doc_date, label('sum', func.sum(Transactions.amount))).filter(Transactions.id_region == 'UA-05').filter(Transactions.kevk == 2281).group_by(Transactions.doc_date).all()
-	dates = [(x[0][:7],x[1]) for x in dates]
-	dates = [(x,sum(map(itemgetter(1),y))) for x,y in groupby(dates, itemgetter(0))]
-	# cumulative values
-	cum_vals = list(accumulate([i[1] for i in dates]))
+		# launch timeline -> start regions is UA-05
+		dates = db.session.query(Transactions.doc_date, label('sum', func.sum(Transactions.amount))).filter(Transactions.id_region == region).filter(Transactions.kevk == 2281).group_by(Transactions.doc_date).all()
+		dates = [(x[0][:7],x[1]) for x in dates]
+		dates = [(x,sum(map(itemgetter(1),y))) for x,y in groupby(dates, itemgetter(0))]
+		# cumulative values
+		cum_vals = list(accumulate([i[1] for i in dates]))
 
-	return render_template(
-			'index.html', 
-			trans=trans, 
-			lots=lots, 
-			regions=regs, 
-			dates={'dates': [[{"date": d[0], "value": round(d[1], 2)} for d in dates], [{"date": d[0], "value": round(c, 2)} for d,c in zip(dates, cum_vals)]]}, 
-			map_ukr={'map': [{"id": t[0], "value": round(t[1], 2)} for t in regions_trans]}
-		)
+		# budget of the oblast
+		budget = regions_budgets[region][page]
+
+		return jsonify({
+					'trans' : [serialize_trans(t) for t in trans],
+					'lots': [serialize_lots(l) for l in lots],
+					'dates': [[{"date": d[0], "value": round(d[1], 2)} for d in dates], [{"date": d[0], "value": round(c, 2), "budget": budget} for d,c in zip(dates, cum_vals)]],
+					'region': regs[region],
+				})
+	return jsonify({'error' : 'bad'})
 
 @app.route('/update', methods=['POST'])
 def update():
 	region = request.form['region']
 	page = request.form['page']
 	lots = Prozzoro.query.filter(Prozzoro.id_region == region).all()
+
+	# budget of the oblast
+	budget = regions_budgets[region][page]
+	
 	if page == 'ukravto':
 		trans = Transactions.query.filter(Transactions.id_region == region).filter(Transactions.kevk == 2281).all()
-		
-		regions_trans = db.session.query(Transactions.id_region, label('sum', func.sum(Transactions.amount))).filter(Transactions.kevk == 2281).group_by(Transactions.id_region).all()
 		
 		dates = db.session.query(Transactions.doc_date, label('sum', func.sum(Transactions.amount))).filter(Transactions.id_region == region).filter(Transactions.kevk == 2281).group_by(Transactions.doc_date).all()
 		dates = [(x[0][:7],x[1]) for x in dates]
@@ -107,14 +153,12 @@ def update():
 
 		return jsonify({
 				'trans' : [serialize_trans(t) for t in trans], 
-				'lots': [serialize_lots(l) for l in lots], 
-				'map': [{"id": t[0], "value": round(t[1])} for t in regions_trans], 
-				'dates': [[{"date": d[0], "value": round(d[1], 2)} for d in dates], [{"date": d[0], "value": round(c, 2)} for d,c in zip(dates, cum_vals)]]
+				'lots': [serialize_lots(l) for l in lots],
+				'dates': [[{"date": d[0], "value": round(d[1], 2), "budget": budget} for d in dates], [{"date": d[0], "value": round(c, 2), "budget": budget} for d,c in zip(dates, cum_vals)]],
+				'region': regs[region]
 			})
 	else:
 		trans = Transactions.query.filter(Transactions.id_region == region).filter(Transactions.kevk != 2281).all()
-		
-		regions_trans = db.session.query(Transactions.id_region, label('sum', func.sum(Transactions.amount))).filter(Transactions.kevk != 2281).group_by(Transactions.id_region).all()
 		
 		dates = db.session.query(Transactions.doc_date, label('sum', func.sum(Transactions.amount))).filter(Transactions.id_region == region).filter(Transactions.kevk != 2281).group_by(Transactions.doc_date).all()
 		
@@ -125,9 +169,36 @@ def update():
 
 		return jsonify({
 				'trans' : [serialize_trans(t) for t in trans], 
-				'lots': [serialize_lots(l) for l in lots], 
-				'map': [{"id": t[0], "value": round(t[1])} for t in regions_trans], 
-				'dates': [[{"date": d[0], "value": round(d[1], 2)} for d in dates], [{"date": d[0], "value": round(c, 2)} for d,c in zip(dates, cum_vals)]]
+				'lots': [serialize_lots(l) for l in lots],
+				'dates': [[{"date": d[0], "value": round(d[1], 2), "budget": budget} for d in dates], [{"date": d[0], "value": round(c, 2), "budget": budget} for d,c in zip(dates, cum_vals)]],
+				'region': regs[region]
 			})
 
 	return jsonify({'error' : 'bad'})
+
+
+@app.route('/porog', methods=['POST'])
+def porog():
+	lots = Prozzoro.query.all()
+	if True:
+		return jsonify({
+				'lots': [serialize_lots(l) for l in lots]
+			})
+	return jsonify({'error' : 'bad'})
+
+
+@app.route('/lots/<region>')
+def lots(region):
+	oblast = regs[region]
+	lots = Prozzoro.query.filter(Prozzoro.id_region == region).all()
+	return render_template('region.html', lots=lots, oblast=oblast)
+
+
+@app.route('/transactions/<region>/<page>')
+def trans(region, page):
+	oblast = regs[region]
+	if page == 'subvention':
+		trans = Transactions.query.filter(Transactions.id_region == region).filter(Transactions.kevk != 2281).all()
+		return render_template('transactions.html', trans=trans, oblast=oblast)
+	trans = Transactions.query.filter(Transactions.id_region == region).filter(Transactions.kevk == 2281).all()
+	return render_template('transactions.html', trans=trans, oblast=oblast)

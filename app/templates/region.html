@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% set active_page = "no_sidebar" %}
+
+{% block content %}
+<div class="row">
+	<div class="col-lg-12 col-md-12">
+		<div class="card">
+			<div class="card-header">
+				<h2 class="card-title-trans">{{ oblast }} область</h4>
+				<h4 class="card-title-trans">Список тендерів</h4>
+			</div>
+			<div class="card-body">
+				<table class="table tablesorter" id="big-table">
+					<thead class="text-info">
+						<tr>
+							<th>Лот</th>
+							<th>Очікувана вартість, грн.</th>
+							<th>Організатов</th>
+							<th>Переможець</th>
+							<th>Переможна пропозиція, грн.</th>
+							<th>CPV код</th>
+							<th>Пороговість</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for lot in lots %}
+						<tr>
+							<td><a href="{{ lot.link }}">{{ lot.lot }}</a></td>
+							<td>{{ lot.expected_cost }}</td>
+							<td>{{ lot.organizer }}</td>
+							<td>{{ lot.winner }}</td>
+							<td>{{ lot.sum_win }}</td>
+							<td>{{ lot.cpv }}</td>
+							<td>{{ lot.porog }}</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</div>
+{% endblock %}
+
+{% block big_data_table %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/data-table.js') }}"></script>
+{% endblock %}

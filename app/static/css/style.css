@@ -3,6 +3,11 @@
   height: 400px;
 }
 
+.map-title {
+  font-size: 16px;
+  font-weight: bold;
+}
+
 .logo img {
 	display: block;
 	margin: auto;
@@ -31,4 +36,94 @@
   border: 3px solid #fff;
   opacity: 0.9;
   background: #ccc;
+}
+
+/* change color of radio buttons */
+.form-check-radio input[type=radio]:checked+.form-check-sign:before {
+	border-color: #1d8cf8;
+}
+
+.form-check-radio input[type=radio]:checked+.form-check-sign:after {
+    background-color: #1d8cf8;
+    border-color: #1d8cf8;
+}
+
+/* change color of link */
+a {
+    color: #1d8cf8;
+}
+
+/* preloader */
+.loader-wrapper {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  -webkit-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+  display: none;
+}
+
+.loader {
+  border: 5px solid #f3f3f3;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  -webkit-animation: spin 2s linear infinite;
+  animation: spin 2s linear infinite;
+}
+
+.replicate {
+  border-top: 5px solid #1d8cf8;
+  border-bottom: 5px solid #1d8cf8;
+}
+
+@-webkit-keyframes spin {
+  0% { -webkit-transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* customize datatable */
+.dataTables_length {
+  float: left;
+}
+
+.dataTables_filter {
+  float: right;
+}
+
+.dataTables_filter input {
+  width: 200px;
+  height: 40px;
+}
+
+.paginate_button.current {
+  border: 1px solid #1d8cf8;
+  color: #1d8cf8;
+}
+
+.paginate_button, .ellipsis {
+  color: grey;
+  border-color: transparent;
+  background-color: transparent;
+  opacity: 1;
+  border-radius: 20px;
+  margin: 0 2px;
+  min-width: 36px;
+  height: 36px;
+  font-weight: bold;
+  text-align: center;
+  line-height: 20px;
+  border-width: 2px;
+  padding: 6px 12px;
+  z-index: 2;
+  cursor: pointer;
+  transition: all 100ms linear;
+  position: relative;
+  float: left;
+  text-decoration: none;
 }
