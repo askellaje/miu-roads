@@ -1,7 +1,7 @@
 $(document).ready(function() {
 
   // launch map
-  drawMap(dataMap['map'][0]);
+  drawMap(dataMap['map'][0], false);
 
   // launch timeline and tables
   ajaxRequest('ukravto', 'UA-05', '/start', false);
@@ -29,7 +29,7 @@ function ajaxRequest(page, regionId, url, evt) {
       region : regionId
     },
     beforeSend: function() {
-      for (let i = 1; i < 4; i++) { 
+      for (let i = 1; i < 5; i++) { 
         showLoader(`#card-${i}`, `#loader-${i}`);
       }
     },
@@ -39,17 +39,20 @@ function ajaxRequest(page, regionId, url, evt) {
   .done(function(data) {
     if (data.error) {
       console.log(data.error);
-      for (let i = 1; i < 11; i++) { 
+      for (let i = 1; i < 5; i++) { 
         hideLoader(`#card-${i}`, `#loader-${i}`);
       }
     }
     else {
-      for (let i = 1; i < 11; i++) { 
+      for (let i = 1; i < 5; i++) { 
         hideLoader(`#card-${i}`, `#loader-${i}`);
       }
       updateTable("tbody-trans", data.trans);
       updateTable("tbody-lots", data.lots);
       drawTimeLine(data.dates[0], data.region, 0);
+      
+      updateInfoBox(data.region, data.budget, data.ratio, data.spent, data.n_trans, data.n_lots);
+      
       $('#change-timeline').change(function(){
         var val = $('input[name=dataset]:checked', '#change-timeline').val();
         drawTimeLine(data.dates[val], data.region, parseInt(val));
@@ -59,6 +62,15 @@ function ajaxRequest(page, regionId, url, evt) {
   if (evt) {
     event.preventDefault();
   }
+}
+
+function updateInfoBox(title, budget, ratio, spent, trans, lots) {
+  document.getElementById('map-info-title').innerHTML = `${title} область`;
+  document.getElementById('map-info-budget').innerHTML = budget;
+  document.getElementById('map-info-ratio').innerHTML = ratio;
+  document.getElementById('map-info-spent').innerHTML = spent;
+  document.getElementById('map-info-trans').innerHTML = trans;
+  document.getElementById('map-info-lots').innerHTML = lots;
 }
 
 function ajaxRequestPorog() {
@@ -78,33 +90,69 @@ function ajaxRequestPorog() {
       hideLoader(`#card-4`, `#loader-4`);
     }
     else {
-      updateTable("table-porog", data.lots);
-      $('#table-porog-1').DataTable({
-        "language": {
-          "search": "Пошук по всіх колонках",
-          "lengthMenu": "Кількість рядків _MENU_",
-          "paginate": {
-            "previous": `<i class="tim-icons icon-minimal-left"></i>`,
-            "next": `<i class="tim-icons icon-minimal-right"></i>`
-          }
-        },
-        "bInfo" : false,
-        "sDom": '<"row view-filter"<"col-sm-12"<"pull-left"l><"pull-right"f><"clearfix">>>t<"row view-pager"<"col-sm-12"<"text-center"ip>>>'
+
+      initDataTable(data.lots[0]);
+
+      $('#porog-form').change(function(){
+        var val = $('input[name=dataset-porog]:checked', '#porog-form').val();
+        $('#data-table').empty();
+        recreatePorogTable();
+        initDataTable(data.lots[val]);
+
       });
-      var inp = $('#table-porog-1_filter input').addClass('form-control');
-      inp.attr("placeholder", "Автомагістраль");
 
-      var select = $('#table-porog-1_length select').addClass('form-control');
-
-      $('div.row.view-pager div.col-sm-12').addClass('d-flex justify-content-center');
       hideLoader(`#card-4`, `#loader-4`);
     }
   });
   event.preventDefault();
 }
 
+function recreatePorogTable() {
+  txt = `
+    <table class="table tablesorter" id="table-porog-0">
+      <thead class="text-info">
+        <tr>
+          <th>Лот</th>
+          <th>Очікувана вартість</th>
+          <th>Організатор</th>
+          <th>Переможець</th>
+          <th>Сума переможної пропозиції</th>
+          <th>Регіон</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-porog"></tbody>
+    </table>
+  `
+  var wrapper = document.getElementById('data-table');
+  wrapper.innerHTML = txt;
 
-function drawMap(data) {
+}
+
+function initDataTable(lots) {
+  updateTable("tbody-porog", lots);
+  $("#table-porog-0").DataTable({
+    "language": {
+      "search": "Пошук по всіх колонках",
+      "lengthMenu": "Кількість рядків _MENU_",
+      "paginate": {
+        "previous": `<i class="tim-icons icon-minimal-left"></i>`,
+        "next": `<i class="tim-icons icon-minimal-right"></i>`
+      }
+    },
+    "bInfo" : false,
+    "sDom": '<"row view-filter"<"col-sm-12"<"pull-left"l><"pull-right"f><"clearfix">>>t<"row view-pager"<"col-sm-12"<"text-center"ip>>>'
+  });
+  var inp = $('#table-porog-0_filter input').addClass('form-control');
+  inp.attr("placeholder", "Автомагістраль");
+
+  var select = $('#table-porog-0_length select').addClass('form-control');
+
+  $('div.row.view-pager div.col-sm-12').addClass('d-flex justify-content-center');
+  
+}
+
+function drawMap(data, page) {
+  var icon = page ? "icon-coins" : "icon-delivery-fast"
   var map = AmCharts.makeChart( "map", {
     "type": "map",
     "theme": "light",
@@ -116,7 +164,12 @@ function drawMap(data) {
     "areasSettings": {
       "autoZoom": false,
       "selectable": true,
-      "balloonText": "[[title]]: [[value]]"
+      "color": "#a4d1fc",
+      "colorSolid": "#1770c6",
+      "balloonText": `<div class='wrapper-tooltip-title'><span class='map-tooltip-title'>[[title]]</span></div><div class='wrapper-tooltip-value'><span class='map-tooltip-value'><i class='tim-icons ${icon}'></i>  [[value]]%</span></div>`
+    },
+    "baloon": {
+      "verticalPadding": 10,
     },
     "valueLegend": {
       "right": 10,
@@ -153,9 +206,6 @@ function drawMap(data) {
     
     // update timeline and tables
     ajaxRequest(document.querySelector(".active").id, event.mapObject.id, '/update', true);
-    
-    // update info div
-    document.getElementById("map-info").innerHTML = event.mapObject.title;
 
     changeLinkBigTable(event.mapObject.id, "big-table-lots");
     changeLinkBigTable(event.mapObject.id, "big-table-trans");
@@ -188,11 +238,12 @@ function drawTimeLine(data, regionSubtitle, budget) {
       "legend": {
         "enabled": budget ? true : false,
         "equalWidths": false,
+        "maxColumns": 2,
         "position": "absolute",
         "valueAlign": "center",
         "valueWidth": 100,
         "bottom": -20,
-        "left": 100,
+        "left": 0,
         "data": [{
           "title": "Кумулятивно",
           "color": "#1d8cf8"
@@ -311,8 +362,8 @@ function checkRadioButtonDefault() {
 
 function changeContainer(prev, current, val) {
   if (((prev === 'ukravto') && (current == 'subvention')) || ((prev === 'subvention') && (current == 'ukravto'))) {
-    drawMap(dataMap['map'][val]);
-    
+    drawMap(dataMap['map'][val], parseInt(val));
+
     ajaxRequest(document.querySelector(".active").id, 'UA-05', '/update', true);
 
     checkRadioButtonDefault();
@@ -329,7 +380,7 @@ function changeContainer(prev, current, val) {
 
     createContainer();
 
-    drawMap(dataMap['map'][val]);
+    drawMap(dataMap['map'][val], parseInt(val));
     
     ajaxRequest(document.querySelector(".active").id, 'UA-05', '/update', true);
     
@@ -370,10 +421,24 @@ function createTable() {
       <div class="col-12">
         <div class="card" id="card-4">
           <div class="card-header">
-            <h4 class="card-title">Всього лотів за областями</h4>
+            <h4 class="card-title" style="font-weight: bold;">Всього лотів за областями</h4>
+            <form id="porog-form">
+              <div class="form-check form-check-radio form-check-inline">
+                <label class="form-check-label">
+                  <input class="form-check-input" type="radio" name="dataset-porog" id="porogy" value="0" checked> Пороги
+                  <span class="form-check-sign"></span>
+                </label>
+              </div>
+              <div class="form-check form-check-radio form-check-inline">
+                <label class="form-check-label">
+                  <input class="form-check-input" type="radio" name="dataset-porog" id="nadporogy" value="1"> Надпороги
+                  <span class="form-check-sign"></span>
+                </label>
+              </div>
+            </form>
           </div>
-          <div class="card-body">
-            <table class="table tablesorter" id="table-porog-1">
+          <div class="card-body" id="data-table">
+            <table class="table tablesorter" id="table-porog-0">
               <thead class="text-info">
                 <tr>
                   <th>Лот</th>
@@ -384,7 +449,7 @@ function createTable() {
                   <th>Регіон</th>
                 </tr>
               </thead>
-              <tbody id="table-porog"></tbody>
+              <tbody id="tbody-porog"></tbody>
             </table>
           </div>
         </div>
@@ -405,10 +470,44 @@ var row = `<div class="row">
     <div class="card">
       <div class="card-header" style="text-align: center;">
         <span class="map-title">Обсяг платежів за областями</span>
+        <span class="map-subtitle">Відношення суми платежів до бюджету</span>
       </div>
       <div class="card-wrapper">
         <div id="map"></div>
-        <div id="map-info"></div>
+        <div id="map-info">
+          <div class="map-info-header">
+            <span id="map-info-title">Вінницька область</span>
+          </div>
+          <div class="map-info-table" id="card-4">
+            <table>
+              <tbody>
+                <tr class="map-info-row">
+                  <td>Бюджет, грн.</td>
+                  <td id="map-info-budget" class="map-info-value"></td>
+                </tr>
+                <tr class="map-info-row">
+                  <td>Витрачено, грн.</td>
+                  <td id="map-info-spent" class="map-info-value"></td>
+                </tr>
+                <tr class="map-info-row">
+                  <td>Відношення, %</td>
+                  <td id="map-info-ratio" class="map-info-value"></td>
+                </tr>
+                <tr class="map-info-row">
+                  <td>Кількість платежів</td>
+                  <td id="map-info-trans" class="map-info-value"></td>
+                </tr>
+                <tr class="map-info-row">
+                  <td>Кількість тендерів</td>
+                  <td id="map-info-lots" class="map-info-value"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="loader-4" class="loader-wrapper">
+            <div class="loader replicate"></div>
+          </div>
+        </div>
       </div>
     </div>    
   </div>
@@ -447,12 +546,12 @@ var row = `<div class="row">
       <div class="card-wrapper">
         <div class="card-header">
           <div class="d-flex justify-content-between align-items-center">
-          <h4 class="card-title" style="margin:0;">Список тендерів</h4>
+            <h4 class="card-title" style="margin:0; font-weight: bold;">Список тендерів</h4>
             <a href="lots/UA-05" target="_blank" id="big-table-lots">
               <button class="btn btn-sm btn-info btn-fab btn-icon btn-round">
                 <i class="tim-icons icon-bullet-list-67"></i>
               </button>
-              </a>
+            </a>
           </div>
         </div>
         <div class="card-body">
@@ -483,7 +582,7 @@ var row = `<div class="row">
       <div class="card-wrapper">
         <div class="card-header">
           <div class="d-flex justify-content-between align-items-center">
-          <h4 class="card-title" style="margin:0;">Фактичні платежі</h4>
+            <h4 class="card-title" style="margin: 0; font-weight: bold;">Фактичні платежі</h4>
             <a href="transactions/UA-05/ukravto" target="_blank" id="big-table-trans">
               <button class="btn btn-sm btn-info btn-fab btn-icon btn-round">
                 <i class="tim-icons icon-bullet-list-67"></i>

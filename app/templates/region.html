@@ -29,7 +29,7 @@
 							<td>{{ lot.expected_cost }}</td>
 							<td>{{ lot.organizer }}</td>
 							<td>{{ lot.winner }}</td>
-							<td>{{ lot.sum_win }}</td>
+							<td>{% if lot.sum_win is none %}  {% else %} {{ lot.sum_win }} {% endif %}</td>
 							<td>{{ lot.cpv }}</td>
 							<td>{{ lot.porog }}</td>
 						</tr>

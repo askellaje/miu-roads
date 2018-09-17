@@ -8,10 +8,44 @@
     <div class="card">
       <div class="card-header" style="text-align: center;">
         <span class="map-title">Обсяг платежів за областями</span>
+        <span class="map-subtitle">Відношення суми платежів до бюджету</span>
       </div>
       <div class="card-wrapper">
         <div id="map"></div>
-        <div id="map-info"></div>
+        <div id="map-info">
+          <div class="map-info-header">
+            <span id="map-info-title">Вінницька область</span>
+          </div>
+          <div class="map-info-table" id="card-4">
+            <table>
+              <tbody>
+                <tr class="map-info-row">
+                  <td>Бюджет, грн.</td>
+                  <td id="map-info-budget" class="map-info-value"></td>
+                </tr>
+                <tr class="map-info-row">
+                  <td>Витрачено, грн.</td>
+                  <td id="map-info-spent" class="map-info-value"></td>
+                </tr>
+                <tr class="map-info-row">
+                  <td>Відношення, %</td>
+                  <td id="map-info-ratio" class="map-info-value"></td>
+                </tr>
+                <tr class="map-info-row">
+                  <td>Кількість платежів</td>
+                  <td id="map-info-trans" class="map-info-value"></td>
+                </tr>
+                <tr class="map-info-row">
+                  <td>Кількість тендерів</td>
+                  <td id="map-info-lots" class="map-info-value"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="loader-4" class="loader-wrapper">
+            <div class="loader replicate"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
