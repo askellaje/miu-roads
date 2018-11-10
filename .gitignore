@@ -2,3 +2,4 @@ __pycache__
 app/__pycache__
 venv
 black-dashboard-html-v1.0.0
+.DS_Store
