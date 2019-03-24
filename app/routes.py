@@ -94,6 +94,42 @@ def serialize_lots(s):
     }
 
 
+PETROL = 0.2135
+DIESEL = 0.1395
+GAS = 0.052
+ALT_FUEL = 0.162
+PERCENT_2018 = 0.5
+PERCENT_2019 = 0.75
+UAH_EUR_2018 = 32.1429
+UAH_EUR_2019 = 31.3329
+
+REGIONS_CALC = {
+    'Вінницька': 0.0568034562407884,
+    'Волинська': 0.0358693496749182,
+    'Дніпропетровська': 0.0503961205463511,
+    'Донецька': 0.050768706451797,
+    'Житомирська': 0.0561976956822459,
+    'Закарпатська': 0.0199182620262989,
+    'Запорізька': 0.0436814244723059,
+    'Івано-Франківська': 0.0253969876552019,
+    'Київ': 0.104998845873339,
+    'Кіровоградська': 0.0347524023832349,
+    'Луганська': 0.0321092433493889,
+    'Львівська': 0.0531069454858932,
+    'Миколаївська': 0.0261429789966431,
+    'Одеська': 0.0387636128691028,
+    'Полтавська': 0.0535757351719447,
+    'Рівненська': 0.0256187526218717,
+    'Сумська': 0.0416578760632874,
+    'Тернопільська': 0.0286931941602912,
+    'Харківська': 0.0597515352743842,
+    'Херсонська': 0.0291187763745988,
+    'Хмельницька': 0.0415714611197998,
+    'Черкаська': 0.0356451443283901,
+    'Чернівецька': 0.0166522233513229,
+    'Чернігівська': 0.0388092698265998
+}
+
 # prework for the map
 regions_trans = db.session.query(Transactions.id_region, Transactions.kevk,
                                  label('sum', func.sum(Transactions.amount))).group_by(Transactions.id_region,
@@ -107,9 +143,15 @@ subvention = [(x, sum(map(itemgetter(1), y))) for x, y in groupby(subvention, it
 subvention = [{"id": t[0], "value": round((t[1] * 100) / regions_budgets[t[0]]['subvention'], 2)} for t in subvention]
 
 
+def _get_spending_data(spending_type):
+    spending = [{'id': i[0], 'value': round(i[2], 2)} for i in regions_trans if i[1] == spending_type]
+    return spending
+
+
 @app.route('/')
 @app.route('/index')
 def index():
+    print(_get_spending_data(2281))
     return render_template('index.html', map_ukr={'map': [ukravto, subvention]})
 
 
@@ -235,8 +277,42 @@ def trans(region, page):
 
 @app.route('/calculator', methods=['POST'])
 def calculator():
-    input1 = int(request.form['input1'])
-    input2 = int(request.form['input2'])
-    result = input1 + input2
-    print(result)
-    return jsonify({'result': result})
+
+    # 2018
+    petrol_2018 = float(request.form['petrol_2018'])
+    diesel_2018 = float(request.form['diesel_2018'])
+    gas_2018 = float(request.form['gas_2018'])
+    alt_fuel_2018 = float(request.form['alt_fuel_2018'])
+    roads_total_2018_eur = round((petrol_2018 * PETROL + diesel_2018 * DIESEL + gas_2018 * GAS +
+                                  alt_fuel_2018 * ALT_FUEL) * PERCENT_2018, 2)
+    roads_total_2018_uah = round(roads_total_2018_eur * UAH_EUR_2018, 2)
+    roads_country_60_2018 = round(roads_total_2018_uah * 0.6, 2)
+    roads_country_35_2018 = round(roads_total_2018_uah * 0.35, 2)
+    roads_safety_2018 = round(roads_total_2018_uah * 0.05, 2)
+    regions_2018 = [round(roads_country_35_2018 * v, 2) for v in REGIONS_CALC.values()]
+
+    # 2019
+    petrol_2019 = float(request.form['petrol_2019'])
+    diesel_2019 = float(request.form['diesel_2019'])
+    gas_2019 = float(request.form['gas_2019'])
+    alt_fuel_2019 = float(request.form['alt_fuel_2019'])
+    roads_total_2019_eur = round((petrol_2019 * PETROL + diesel_2019 * DIESEL + gas_2019 * GAS +
+                                  alt_fuel_2019 * ALT_FUEL) * PERCENT_2019, 2)
+    roads_total_2019_uah = round(roads_total_2019_eur * UAH_EUR_2019, 2)
+    roads_country_60_2019 = round(roads_total_2019_uah * 0.6, 2)
+    roads_country_35_2019 = round(roads_total_2019_uah * 0.35, 2)
+    roads_safety_2019 = round(roads_total_2019_uah * 0.05, 2)
+    regions_2019 = [round(roads_country_35_2019 * v, 2) for v in REGIONS_CALC.values()]
+
+    return jsonify({'roads_total_2018_eur': roads_total_2018_eur,
+                    'roads_total_2019_eur': roads_total_2019_eur,
+                    'roads_total_2018_uah': roads_total_2018_uah,
+                    'roads_total_2019_uah': roads_total_2019_uah,
+                    'roads_country_60_2018': roads_country_60_2018,
+                    'roads_country_60_2019': roads_country_60_2019,
+                    'roads_country_35_2018': roads_country_35_2018,
+                    'roads_country_35_2019': roads_country_35_2019,
+                    'roads_safety_2018': roads_safety_2018,
+                    'roads_safety_2019': roads_safety_2019,
+                    'regions_2018': regions_2018,
+                    'regions_2019': regions_2019})

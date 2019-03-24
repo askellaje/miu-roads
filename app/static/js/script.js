@@ -110,8 +110,14 @@ function ajaxRequestPorog() {
 function ajaxRequestCalculator() {
   $.ajax({
     data : {
-      input1: $("#form-calculator #input1").val(),
-      input2: $("#form-calculator #input2").val()
+      petrol_2018: $("#form-calculator #petrol_2018").val(),
+      diesel_2018: $("#form-calculator #diesel_2018").val(),
+      gas_2018: $("#form-calculator #gas_2018").val(),
+      alt_fuel_2018: $("#form-calculator #alt_fuel_2018").val(),
+      petrol_2019: $("#form-calculator #petrol_2019").val(),
+      diesel_2019: $("#form-calculator #diesel_2019").val(),
+      gas_2019: $("#form-calculator #gas_2019").val(),
+      alt_fuel_2019: $("#form-calculator #alt_fuel_2019").val()
     },
     beforeSend: function() {
       showLoader(`#card-5`, `#loader-5`);
@@ -125,7 +131,19 @@ function ajaxRequestCalculator() {
       hideLoader(`#card-5`, `#loader-5`);
     }
     else {
-      document.getElementById('calculator-response').innerHTML = data.result;
+      document.getElementById('calculator-2018-eur').innerHTML = `${data.roads_total_2018_eur} євро`;
+      document.getElementById('calculator-2019-eur').innerHTML = `${data.roads_total_2019_eur} євро`;
+      document.getElementById('calculator-2018-uah').innerHTML = `${data.roads_total_2018_uah} грн`;
+      document.getElementById('calculator-2019-uah').innerHTML = `${data.roads_total_2019_uah} грн`;
+      document.getElementById('roads_country_60_2018').innerHTML = `${data.roads_country_60_2018} грн`;
+      document.getElementById('roads_country_60_2019').innerHTML = `${data.roads_country_60_2019} грн`;
+      document.getElementById('roads_country_35_2018').innerHTML = `${data.roads_country_35_2018} грн`;
+      document.getElementById('roads_country_35_2019').innerHTML = `${data.roads_country_35_2019} грн`;
+      document.getElementById('roads_safety_2018').innerHTML = `${data.roads_safety_2018} грн`;
+      document.getElementById('roads_safety_2019').innerHTML = `${data.roads_safety_2019} грн`;
+
+      createRegionTbody('region-tbody-2018', data.regions_2018);
+      createRegionTbody('region-tbody-2019', data.regions_2019);
 
       hideLoader(`#card-5`, `#loader-5`);
     }
@@ -419,6 +437,12 @@ function changeContainer(prev, current, val) {
     clearContainer();
 
     createCalculator();
+
+    accordion();
+
+    createRegionTbody('region-tbody-2018');
+    createRegionTbody('region-tbody-2019');
+
   } else {
     return // do nothing
   }
@@ -432,30 +456,152 @@ function clearContainer() {
 function createCalculator() {
     document.getElementById('dashboard-container').innerHTML = `
     <div class="row">
-      <div class="col-12">
-        <div class="card" id="card-5">
-          <div class="card-header">
-            <h4 class="card-title" style="font-weight: bold;">Калькулятор</h4>
-          </div>
-          <div class="card-body">
-            <form id="form-calculator">
-                <div class="form-group">
-                  <label for="input1">Бензин</label>
-                  <input type="number" class="form-control" min="0" id="input1" value="0">
+        <div class="col-12">
+            <div class="card" id="card-5">
+                <div class="card-header">
+                    <h4 class="card-title" style="font-weight: bold;">Калькулятор</h4>
+                    <h6>Куди витратили Ваші кошти?</h6>
                 </div>
-                <div class="form-group">
-                  <label for="input2">Дизель</label>
-                  <input type="number" class="form-control" min="0" id="input2" value="0">
+                <div class="card-body">
+                    <form id="form-calculator">
+                        <div class='row'>
+                            <div class='col-12'>
+                                <h4>Кількість літрів пального які ви придбали, л.</h4>
+                            </div>
+                            <div class="col-6" style='border-right: 1px solid lightgrey;'>
+                                <h5>2018 рік</h5>
+                                <div class="form-group">
+                                    <label for="petrol_2018">Бензин</label>
+                                    <input type="number" class="form-control" min="0" id="petrol_2018" value="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="diesel_2018">Дизель</label>
+                                    <input type="number" class="form-control" min="0" id="diesel_2018" value="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="gas_2018">Газ</label>
+                                    <input type="number" class="form-control" min="0" id="gas_2018" value="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="alt_fuel_2018">Альтернативне паливо</label>
+                                    <input type="number" class="form-control" min="0" id="alt_fuel_2018" value="0">
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <h5>2019 рік</h5>
+                                <div class="form-group">
+                                    <label for="petrol_2019">Бензин</label>
+                                    <input type="number" class="form-control" min="0" id="petrol_2019" value="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="diesel_2019">Дизель</label>
+                                    <input type="number" class="form-control" min="0" id="diesel_2019" value="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="gas_2019">Газ</label>
+                                    <input type="number" class="form-control" min="0" id="gas_2019" value="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="alt_fuel_2019">Альтернативне паливо</label>
+                                    <input type="number" class="form-control" min="0" id="alt_fuel_2019" value="0">
+                                </div>
+                            </div>
+                        </div>
+                        <button id="submit" type="submit" class="btn btn-info">Розрахувати</button>
+                    </form>
+                    <hr>
+                    <div class='row'>
+                        <div class='col-12'>
+                            <h4>Всього пішло на дороги</h4>
+                        </div>
+                        <div class='col-6' style='border-right: 1px solid lightgrey;'>
+                            <div class='col-12 form-group'>
+                                <span id="calculator-2018-eur" class="form-control" style='background-color: rgba(29,37,59,.05)'>0 євро</span>
+                            </div>
+                            <div class='col-12 form-group'>
+                                <span id="calculator-2018-uah" class="form-control" style='background-color: rgba(29,37,59,.05)'>0 грн</span>
+                            </div>
+                        </div>
+                        <div class='col-6'>
+                            <div class='col-12 form-group'>
+                                <span id="calculator-2019-eur" class="form-control" style='background-color: rgba(29,37,59,.05)'>0 євро</span>
+                            </div>
+                            <div class='col-12 form-group'>
+                                <span id="calculator-2019-uah" class="form-control" style='background-color: rgba(29,37,59,.05)'>0 грн</span>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class='row'>
+                        <div class='col-12'>
+                            <h4>Дороги державного значення, 60%</h4>
+                        </div>
+                        <div class='col-6' style='border-right: 1px solid lightgrey;'>
+                            <div class='col-12 form-group'>
+                                <span id="roads_country_60_2018" class="form-control" style='background-color: rgba(29,37,59,.05)'>0 грн</span>
+                            </div>
+                        </div>
+                        <div class='col-6'>
+                            <div class='col-12 form-group'>
+                                <span id="roads_country_60_2019" class="form-control" style='background-color: rgba(29,37,59,.05)'>0 грн</span>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class='row'>
+                        <div class='col-12'>
+                            <h4>Дороги місцевого значення, 35%</h4>
+                        </div>
+                        <div class='col-6' style='border-right: 1px solid lightgrey;'>
+                            <div class='col-12 form-group'>
+                                <span id="roads_country_35_2018" class="form-control" style='background-color: rgba(29,37,59,.05)'>0 грн</span>
+                            </div>
+                            <div class='col-12 form-group'>
+                                <button class="accordion">Розподіл за областями</button>
+                                <div class="panel-accordion">
+                                    <table class="table">
+                                        <tbody id="region-tbody-2018"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class='col-6'>
+                            <div class='col-12 form-group'>
+                                <span id="roads_country_35_2019" class="form-control" style='background-color: rgba(29,37,59,.05)'>0 грн</span>
+                            </div>
+                            <div class='col-12 form-group'>
+                                <button class="accordion">Розподіл за областями</button>
+                                <div class="panel-accordion">
+                                    <table class="table">
+                                        <tbody id="region-tbody-2019"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class='row'>
+                        <div class='col-12'>
+                            <h4>Безпека руху, 5%</h4>
+                        </div>
+                        <div class='col-6' style='border-right: 1px solid lightgrey;'>
+                            <div class='col-12 form-group'>
+                                <span id="roads_safety_2018" class="form-control" style='background-color: rgba(29,37,59,.05)'>0 грн</span>
+                            </div>
+                        </div>
+                        <div class='col-6'>
+                            <div class='col-12 form-group'>
+                                <span id="roads_safety_2019" class="form-control" style='background-color: rgba(29,37,59,.05)'>0 грн</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <button id="submit" type="submit" class="btn btn-info">Порахувати</button>
-            </form>
-          </div>
-          <div id="calculator-response"></div>
+
+            </div>
+            <div id="loader-5" class="loader-wrapper">
+                <div class="loader replicate"></div>
+            </div>
         </div>
-        <div id="loader-5" class="loader-wrapper">
-          <div class="loader replicate"></div>
-        </div>
-      </div>
     </div>
     `;
 
@@ -684,4 +830,37 @@ function showLoader(container, loader) {
 function hideLoader(container, loader) {
   $(loader).hide();
   $(container).css("opacity", "1");
+}
+
+function createRegionTbody(tbody, data=null) {
+    var regions = ['Вінницька', 'Волинська', 'Дніпропетровська', 'Донецька', 'Житомирська', 'Закарпатська', 'Запорізька', 'Івано-Франківська', 'Київ', 'Кіровоградська', 'Луганська', 'Львівська', 'Миколаївська', 'Одеська', 'Полтавська', 'Рівненська', 'Сумська', 'Тернопільська', 'Харківська', 'Херсонська', 'Хмельницька', 'Черкаська', 'Чернівецька', 'Чернігівська'];
+    var table = document.getElementById(tbody);
+    var txt = '';
+    var i;
+
+    for (i = 0; i < regions.length; i++) {
+        j =  data ? data[i] : 0
+        txt += `<tr><td>${regions[i]}</td><td class="text-right">${j}</td></tr>`
+    }
+
+    table.innerHTML = txt;
+
+    return table
+}
+
+function accordion() {
+    var acc = document.getElementsByClassName("accordion");
+    var i;
+
+    for (i = 0; i < acc.length; i++) {
+      acc[i].addEventListener("click", function() {
+        this.classList.toggle("active-accordion");
+        var panel = this.nextElementSibling;
+        if (panel.style.maxHeight){
+          panel.style.maxHeight = null;
+        } else {
+          panel.style.maxHeight = panel.scrollHeight + "px";
+        }
+      });
+    }
 }
