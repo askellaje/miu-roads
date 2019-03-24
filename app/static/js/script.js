@@ -1,7 +1,7 @@
 $(document).ready(function() {
 
   // launch map
-  drawMap(dataMap['map'][0], false);
+  drawMap(dataMap['ukravto'], false);
 
   // launch timeline and tables
   ajaxRequest('ukravto', 'UA-05', '/start', false);
@@ -11,15 +11,15 @@ $(document).ready(function() {
     var previous = $('li.active').attr('id');
     $('ul.nav li.active').removeClass('active');
     $(this).addClass('active');
-    
+
     var current = $(this).attr('id');
-    
-    var val = $(this).val();
-    
+
+    var val = $(this).data('value');
+
     changeContainer(previous, current, val);
 
   });
-  
+
 });
 
 function ajaxRequest(page, regionId, url, evt) {
@@ -29,7 +29,7 @@ function ajaxRequest(page, regionId, url, evt) {
       region : regionId
     },
     beforeSend: function() {
-      for (let i = 1; i < 5; i++) { 
+      for (let i = 1; i < 5; i++) {
         showLoader(`#card-${i}`, `#loader-${i}`);
       }
     },
@@ -39,20 +39,20 @@ function ajaxRequest(page, regionId, url, evt) {
   .done(function(data) {
     if (data.error) {
       console.log(data.error);
-      for (let i = 1; i < 5; i++) { 
+      for (let i = 1; i < 5; i++) {
         hideLoader(`#card-${i}`, `#loader-${i}`);
       }
     }
     else {
-      for (let i = 1; i < 5; i++) { 
+      for (let i = 1; i < 5; i++) {
         hideLoader(`#card-${i}`, `#loader-${i}`);
       }
       updateTable("tbody-trans", data.trans);
       updateTable("tbody-lots", data.lots);
       drawTimeLine(data.dates[0], data.region, 0);
-      
+
       updateInfoBox(data.region, data.budget, data.ratio, data.spent, data.n_trans, data.n_lots);
-      
+
       $('#change-timeline').change(function(){
         var val = $('input[name=dataset]:checked', '#change-timeline').val();
         drawTimeLine(data.dates[val], data.region, parseInt(val));
@@ -78,7 +78,7 @@ function ajaxRequestPorog() {
     data : {
       // do nothing
     },
-    beforeSend: function() { 
+    beforeSend: function() {
       showLoader(`#card-4`, `#loader-4`);
     },
     type : 'POST',
@@ -92,7 +92,6 @@ function ajaxRequestPorog() {
     else {
 
       initDataTable(data.lots[0]);
-
       $('#porog-form').change(function(){
         var val = $('input[name=dataset-porog]:checked', '#porog-form').val();
         $('#data-table').empty();
@@ -102,6 +101,50 @@ function ajaxRequestPorog() {
       });
 
       hideLoader(`#card-4`, `#loader-4`);
+    }
+  });
+  event.preventDefault();
+}
+
+function ajaxRequestCalculator() {
+  $.ajax({
+    data : {
+      petrol_2018: $("#form-calculator #petrol_2018").val(),
+      diesel_2018: $("#form-calculator #diesel_2018").val(),
+      gas_2018: $("#form-calculator #gas_2018").val(),
+      alt_fuel_2018: $("#form-calculator #alt_fuel_2018").val(),
+      petrol_2019: $("#form-calculator #petrol_2019").val(),
+      diesel_2019: $("#form-calculator #diesel_2019").val(),
+      gas_2019: $("#form-calculator #gas_2019").val(),
+      alt_fuel_2019: $("#form-calculator #alt_fuel_2019").val()
+    },
+    beforeSend: function() {
+      showLoader(`#card-5`, `#loader-5`);
+    },
+    type : 'POST',
+    url : '/calculator'
+  })
+  .done(function(data) {
+    if (data.error) {
+      console.log(data.error);
+      hideLoader(`#card-5`, `#loader-5`);
+    }
+    else {
+      document.getElementById('calculator-2018-eur').innerHTML = `${data.roads_total_2018_eur} євро`;
+      document.getElementById('calculator-2019-eur').innerHTML = `${data.roads_total_2019_eur} євро`;
+      document.getElementById('calculator-2018-uah').innerHTML = `${data.roads_total_2018_uah} грн`;
+      document.getElementById('calculator-2019-uah').innerHTML = `${data.roads_total_2019_uah} грн`;
+      document.getElementById('roads_country_60_2018').innerHTML = `${data.roads_country_60_2018} грн`;
+      document.getElementById('roads_country_60_2019').innerHTML = `${data.roads_country_60_2019} грн`;
+      document.getElementById('roads_country_35_2018').innerHTML = `${data.roads_country_35_2018} грн`;
+      document.getElementById('roads_country_35_2019').innerHTML = `${data.roads_country_35_2019} грн`;
+      document.getElementById('roads_safety_2018').innerHTML = `${data.roads_safety_2018} грн`;
+      document.getElementById('roads_safety_2019').innerHTML = `${data.roads_safety_2019} грн`;
+
+      createRegionTbody('region-tbody-2018', data.regions_2018);
+      createRegionTbody('region-tbody-2019', data.regions_2019);
+
+      hideLoader(`#card-5`, `#loader-5`);
     }
   });
   event.preventDefault();
@@ -148,11 +191,10 @@ function initDataTable(lots) {
   var select = $('#table-porog-0_length select').addClass('form-control');
 
   $('div.row.view-pager div.col-sm-12').addClass('d-flex justify-content-center');
-  
+
 }
 
 function drawMap(data, page) {
-  var icon = page ? "icon-coins" : "icon-delivery-fast"
   var map = AmCharts.makeChart( "map", {
     "type": "map",
     "theme": "light",
@@ -166,7 +208,7 @@ function drawMap(data, page) {
       "selectable": true,
       "color": "#a4d1fc",
       "colorSolid": "#1770c6",
-      "balloonText": `<div class='wrapper-tooltip-title'><span class='map-tooltip-title'>[[title]]</span></div><div class='wrapper-tooltip-value'><span class='map-tooltip-value'><i class='tim-icons ${icon}'></i>  [[value]]%</span></div>`
+      "balloonText": `<div class='wrapper-tooltip-title'><span class='map-tooltip-title'>[[title]]</span></div><div class='wrapper-tooltip-value'><span class='map-tooltip-value'>[[value]] грн.</span></div>`
     },
     "baloon": {
       "verticalPadding": 10,
@@ -193,9 +235,9 @@ function drawMap(data, page) {
   map.addListener("clickMapObject", function(event) {
     // for (var i in map.dataProvider.areas) {
     //   var area = map.dataProvider.areas[i];
-    //   if (area.showAsSelected) {  
+    //   if (area.showAsSelected) {
     //     //set a new color only if it wasn't assigned before
-    //     area.showAsSelected = false; 
+    //     area.showAsSelected = false;
     //   }
     // }
     // event.mapObject.showAsSelected = true;
@@ -203,7 +245,7 @@ function drawMap(data, page) {
 
     // checked "by month" radio
     checkRadioButtonDefault();
-    
+
     // update timeline and tables
     ajaxRequest(document.querySelector(".active").id, event.mapObject.id, '/update', true);
 
@@ -334,9 +376,9 @@ function drawTimeLine(data, regionSubtitle, budget) {
 function updateTable(tbody, obj) {
   var table = document.getElementById(tbody);
   table.innerHTML = '';
-  
+
   txt = '';
-  
+
   if (tbody === 'tbody-trans') {
     for (x in obj) {
       txt += `<tr><td>${obj[x].payer_name}</td><td>${obj[x].amount}</td><td>${obj[x].recipt_name}</td><td>${obj[x].doc_date}</td></tr>`
@@ -361,8 +403,11 @@ function checkRadioButtonDefault() {
 }
 
 function changeContainer(prev, current, val) {
-  if (((prev === 'ukravto') && (current == 'subvention')) || ((prev === 'subvention') && (current == 'ukravto'))) {
-    drawMap(dataMap['map'][val], parseInt(val));
+  var arr_maps = ['ukravto', 'subvention', 'safety', 'experiment', 'other']
+  var arr_not_maps = ['porog', 'calculator']
+
+  if ((prev != current) && (arr_maps.includes(prev)) && (arr_maps.includes(current))) { // map -> map
+    drawMap(dataMap[val], 1);
 
     ajaxRequest(document.querySelector(".active").id, 'UA-05', '/update', true);
 
@@ -371,20 +416,31 @@ function changeContainer(prev, current, val) {
     changeLinkBigTable('UA-05', 'big-table-lots');
     changeLinkBigTable('UA-05', 'big-table-trans');
 
-  } else if (((prev === 'ukravto') && (current == 'porog')) || ((prev === 'subvention') && (current == 'porog'))) {
+  } else if (current == 'porog') { // * -> porog
     clearContainer();
 
     createTable();
-  } else if (((prev === 'porog') && (current == 'ukravto')) || ((prev === 'porog') && (current == 'subvention'))) {
+
+  } else if ((arr_not_maps.includes(prev)) && (arr_maps.includes(current))) { // porog|calculator -> map
     clearContainer();
 
     createContainer();
 
-    drawMap(dataMap['map'][val], parseInt(val));
-    
+    drawMap(dataMap[val], parseInt(val));
+
     ajaxRequest(document.querySelector(".active").id, 'UA-05', '/update', true);
-    
+
     checkRadioButtonDefault();
+  } else if (current == 'calculator') { // * -> calculator
+    clearContainer();
+
+    createCalculator();
+
+    accordion();
+
+    createRegionTbody('region-tbody-2018');
+    createRegionTbody('region-tbody-2019');
+
   } else {
     return // do nothing
   }
@@ -395,6 +451,163 @@ function clearContainer() {
   container.innerHTML = '';
 }
 
+function createCalculator() {
+    document.getElementById('dashboard-container').innerHTML = `
+    <div class="row">
+        <div class="col-12">
+            <div class="card" id="card-5">
+                <div class="card-header">
+                    <h4 class="card-title" style="font-weight: bold;">Калькулятор</h4>
+                    <h6>Куди витратили Ваші кошти?</h6>
+                </div>
+                <div class="card-body">
+                    <form id="form-calculator">
+                        <div class='row'>
+                            <div class='col-12'>
+                                <h4>Кількість літрів пального які ви придбали, л.</h4>
+                            </div>
+                            <div class="col-6" style='border-right: 1px solid lightgrey;'>
+                                <h5>2018 рік</h5>
+                                <div class="form-group">
+                                    <label for="petrol_2018">Бензин</label>
+                                    <input type="number" class="form-control" min="0" id="petrol_2018" value="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="diesel_2018">Дизель</label>
+                                    <input type="number" class="form-control" min="0" id="diesel_2018" value="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="gas_2018">Газ</label>
+                                    <input type="number" class="form-control" min="0" id="gas_2018" value="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="alt_fuel_2018">Альтернативне паливо</label>
+                                    <input type="number" class="form-control" min="0" id="alt_fuel_2018" value="0">
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <h5>2019 рік</h5>
+                                <div class="form-group">
+                                    <label for="petrol_2019">Бензин</label>
+                                    <input type="number" class="form-control" min="0" id="petrol_2019" value="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="diesel_2019">Дизель</label>
+                                    <input type="number" class="form-control" min="0" id="diesel_2019" value="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="gas_2019">Газ</label>
+                                    <input type="number" class="form-control" min="0" id="gas_2019" value="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="alt_fuel_2019">Альтернативне паливо</label>
+                                    <input type="number" class="form-control" min="0" id="alt_fuel_2019" value="0">
+                                </div>
+                            </div>
+                        </div>
+                        <button id="submit" type="submit" class="btn btn-info">Розрахувати</button>
+                    </form>
+                    <hr>
+                    <div class='row'>
+                        <div class='col-12'>
+                            <h4>Всього пішло на дороги</h4>
+                        </div>
+                        <div class='col-6' style='border-right: 1px solid lightgrey;'>
+                            <div class='col-12 form-group'>
+                                <span id="calculator-2018-eur" class="form-control" style='background-color: rgba(29,37,59,.05)'>0 євро</span>
+                            </div>
+                            <div class='col-12 form-group'>
+                                <span id="calculator-2018-uah" class="form-control" style='background-color: rgba(29,37,59,.05)'>0 грн</span>
+                            </div>
+                        </div>
+                        <div class='col-6'>
+                            <div class='col-12 form-group'>
+                                <span id="calculator-2019-eur" class="form-control" style='background-color: rgba(29,37,59,.05)'>0 євро</span>
+                            </div>
+                            <div class='col-12 form-group'>
+                                <span id="calculator-2019-uah" class="form-control" style='background-color: rgba(29,37,59,.05)'>0 грн</span>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class='row'>
+                        <div class='col-12'>
+                            <h4>Дороги державного значення, 60%</h4>
+                        </div>
+                        <div class='col-6' style='border-right: 1px solid lightgrey;'>
+                            <div class='col-12 form-group'>
+                                <span id="roads_country_60_2018" class="form-control" style='background-color: rgba(29,37,59,.05)'>0 грн</span>
+                            </div>
+                        </div>
+                        <div class='col-6'>
+                            <div class='col-12 form-group'>
+                                <span id="roads_country_60_2019" class="form-control" style='background-color: rgba(29,37,59,.05)'>0 грн</span>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class='row'>
+                        <div class='col-12'>
+                            <h4>Дороги місцевого значення, 35%</h4>
+                        </div>
+                        <div class='col-6' style='border-right: 1px solid lightgrey;'>
+                            <div class='col-12 form-group'>
+                                <span id="roads_country_35_2018" class="form-control" style='background-color: rgba(29,37,59,.05)'>0 грн</span>
+                            </div>
+                            <div class='col-12 form-group'>
+                                <button class="accordion">Розподіл за областями</button>
+                                <div class="panel-accordion">
+                                    <table class="table">
+                                        <tbody id="region-tbody-2018"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class='col-6'>
+                            <div class='col-12 form-group'>
+                                <span id="roads_country_35_2019" class="form-control" style='background-color: rgba(29,37,59,.05)'>0 грн</span>
+                            </div>
+                            <div class='col-12 form-group'>
+                                <button class="accordion">Розподіл за областями</button>
+                                <div class="panel-accordion">
+                                    <table class="table">
+                                        <tbody id="region-tbody-2019"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class='row'>
+                        <div class='col-12'>
+                            <h4>Безпека руху, 5%</h4>
+                        </div>
+                        <div class='col-6' style='border-right: 1px solid lightgrey;'>
+                            <div class='col-12 form-group'>
+                                <span id="roads_safety_2018" class="form-control" style='background-color: rgba(29,37,59,.05)'>0 грн</span>
+                            </div>
+                        </div>
+                        <div class='col-6'>
+                            <div class='col-12 form-group'>
+                                <span id="roads_safety_2019" class="form-control" style='background-color: rgba(29,37,59,.05)'>0 грн</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div id="loader-5" class="loader-wrapper">
+                <div class="loader replicate"></div>
+            </div>
+        </div>
+    </div>
+    `;
+
+    $("#submit").click(function() {
+        ajaxRequestCalculator()
+    });
+}
+
 function changeLinkBigTable(regionId, button) {
   var link = document.getElementById(button);
   if (button == 'big-table-lots') {
@@ -403,16 +616,6 @@ function changeLinkBigTable(regionId, button) {
     var page = $('ul.nav li.active')[0].id;
     link.setAttribute('href', `transactions/${regionId}/${page}`);
   }
-}
-
-function showLoader(container, loader) {
-  $(container).css("opacity", "0.25");
-  $(loader).show();
-}
-
-function hideLoader(container, loader) {
-  $(loader).hide();
-  $(container).css("opacity", "1");
 }
 
 function createTable() {
@@ -470,7 +673,7 @@ var row = `<div class="row">
     <div class="card">
       <div class="card-header" style="text-align: center;">
         <span class="map-title">Обсяг платежів за областями</span>
-        <span class="map-subtitle">Відношення суми платежів до бюджету</span>
+        <span class="map-subtitle">Всього витрачено у гривнях</span>
       </div>
       <div class="card-wrapper">
         <div id="map"></div>
@@ -509,7 +712,7 @@ var row = `<div class="row">
           </div>
         </div>
       </div>
-    </div>    
+    </div>
   </div>
   <div class="col-lg-6 col-md-12">
     <div class="card" id="card-1">
@@ -575,7 +778,7 @@ var row = `<div class="row">
     <div id="loader-2" class="loader-wrapper">
       <div class="loader replicate"></div>
     </div>
-  </div>          
+  </div>
   <!-- Transactions -->
   <div class="col-lg-6 col-md-12">
     <div class="card card-tasks" id="card-3">
@@ -615,4 +818,47 @@ var row = `<div class="row">
 
 document.getElementById('dashboard-container').innerHTML = row;
 
+}
+
+function showLoader(container, loader) {
+  $(container).css("opacity", "0.25");
+  $(loader).show();
+}
+
+function hideLoader(container, loader) {
+  $(loader).hide();
+  $(container).css("opacity", "1");
+}
+
+function createRegionTbody(tbody, data=null) {
+    var regions = ['Вінницька', 'Волинська', 'Дніпропетровська', 'Донецька', 'Житомирська', 'Закарпатська', 'Запорізька', 'Івано-Франківська', 'Київ', 'Кіровоградська', 'Луганська', 'Львівська', 'Миколаївська', 'Одеська', 'Полтавська', 'Рівненська', 'Сумська', 'Тернопільська', 'Харківська', 'Херсонська', 'Хмельницька', 'Черкаська', 'Чернівецька', 'Чернігівська'];
+    var table = document.getElementById(tbody);
+    var txt = '';
+    var i;
+
+    for (i = 0; i < regions.length; i++) {
+        j =  data ? data[i] : 0
+        txt += `<tr><td>${regions[i]}</td><td class="text-right">${j}</td></tr>`
+    }
+
+    table.innerHTML = txt;
+
+    return table
+}
+
+function accordion() {
+    var acc = document.getElementsByClassName("accordion");
+    var i;
+
+    for (i = 0; i < acc.length; i++) {
+      acc[i].addEventListener("click", function() {
+        this.classList.toggle("active-accordion");
+        var panel = this.nextElementSibling;
+        if (panel.style.maxHeight){
+          panel.style.maxHeight = null;
+        } else {
+          panel.style.maxHeight = panel.scrollHeight + "px";
+        }
+      });
+    }
 }
