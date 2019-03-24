@@ -54,12 +54,17 @@
                         <p class="navigation-page">Пороговість</p>
                     </a>
                 </li>
+                <li class="nav-item" id="calculator">
+                    <a class="nav-link" href="#">
+                        <i class="tim-icons icon-money-coins"></i>
+                        <p class="navigation-page">Калькулятор</p>
+                    </a>
+                </li>
                 <!-- your sidebar here -->
             </ul>
         </div>
     </div>
     {% endif %}
-
     <div class="main-panel">
         {% if active_page == 'sidebar' %}
         <!-- Navbar -->
@@ -75,7 +80,6 @@
                     </div>
                     <h1 class="navbar-brand">Моніторинг витрат на будівництво і ремонт доріг</h1>
                 </div>
-
                 <button class="navbar-toggler" type="button" data-toggle="collapse" aria-controls="navigation-index"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="sr-only">Toggle navigation</span>
@@ -83,17 +87,13 @@
                     <span class="navbar-toggler-icon icon-bar"></span>
                     <span class="navbar-toggler-icon icon-bar"></span>
                 </button>
-
             </div>
         </nav>
         <!-- End Navbar -->
         {% endif %}
-
         <div class="content" {% if active_page == 'no_sidebar' %} style="padding-top: 30px; padding-left: 30px;" {% endif %}>
         <div class="container-fluid" id="dashboard-container">
-            {% block content %}
-
-            {% endblock %}
+            {% block content %} {% endblock %}
         </div>
     </div>
 </div>
@@ -108,15 +108,12 @@
 <!-- DataTable -->
 <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.dataTables.min.js') }}"></script>
 
-{% block big_data_table %}
-
-{% endblock %}
+{% block big_data_table %} {% endblock %}
 
 {% if active_page == 'sidebar' %}
 
 <!-- Default data for the map -->
-{% block map_var %}
-{% endblock %}
+{% block map_var %}{% endblock %}
 
 <!-- Custom Js -->
 <script type="text/javascript" src="{{ url_for('static', filename='js/script.js') }}"></script>

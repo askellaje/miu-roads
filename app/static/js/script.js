@@ -11,15 +11,15 @@ $(document).ready(function() {
     var previous = $('li.active').attr('id');
     $('ul.nav li.active').removeClass('active');
     $(this).addClass('active');
-    
+
     var current = $(this).attr('id');
-    
+
     var val = $(this).val();
-    
+
     changeContainer(previous, current, val);
 
   });
-  
+
 });
 
 function ajaxRequest(page, regionId, url, evt) {
@@ -29,7 +29,7 @@ function ajaxRequest(page, regionId, url, evt) {
       region : regionId
     },
     beforeSend: function() {
-      for (let i = 1; i < 5; i++) { 
+      for (let i = 1; i < 5; i++) {
         showLoader(`#card-${i}`, `#loader-${i}`);
       }
     },
@@ -39,20 +39,20 @@ function ajaxRequest(page, regionId, url, evt) {
   .done(function(data) {
     if (data.error) {
       console.log(data.error);
-      for (let i = 1; i < 5; i++) { 
+      for (let i = 1; i < 5; i++) {
         hideLoader(`#card-${i}`, `#loader-${i}`);
       }
     }
     else {
-      for (let i = 1; i < 5; i++) { 
+      for (let i = 1; i < 5; i++) {
         hideLoader(`#card-${i}`, `#loader-${i}`);
       }
       updateTable("tbody-trans", data.trans);
       updateTable("tbody-lots", data.lots);
       drawTimeLine(data.dates[0], data.region, 0);
-      
+
       updateInfoBox(data.region, data.budget, data.ratio, data.spent, data.n_trans, data.n_lots);
-      
+
       $('#change-timeline').change(function(){
         var val = $('input[name=dataset]:checked', '#change-timeline').val();
         drawTimeLine(data.dates[val], data.region, parseInt(val));
@@ -78,7 +78,7 @@ function ajaxRequestPorog() {
     data : {
       // do nothing
     },
-    beforeSend: function() { 
+    beforeSend: function() {
       showLoader(`#card-4`, `#loader-4`);
     },
     type : 'POST',
@@ -102,6 +102,32 @@ function ajaxRequestPorog() {
       });
 
       hideLoader(`#card-4`, `#loader-4`);
+    }
+  });
+  event.preventDefault();
+}
+
+function ajaxRequestCalculator() {
+  $.ajax({
+    data : {
+      input1: $("#form-calculator #input1").val(),
+      input2: $("#form-calculator #input2").val()
+    },
+    beforeSend: function() {
+      showLoader(`#card-5`, `#loader-5`);
+    },
+    type : 'POST',
+    url : '/calculator'
+  })
+  .done(function(data) {
+    if (data.error) {
+      console.log(data.error);
+      hideLoader(`#card-5`, `#loader-5`);
+    }
+    else {
+      document.getElementById('calculator-response').innerHTML = data.result;
+
+      hideLoader(`#card-5`, `#loader-5`);
     }
   });
   event.preventDefault();
@@ -148,7 +174,7 @@ function initDataTable(lots) {
   var select = $('#table-porog-0_length select').addClass('form-control');
 
   $('div.row.view-pager div.col-sm-12').addClass('d-flex justify-content-center');
-  
+
 }
 
 function drawMap(data, page) {
@@ -193,9 +219,9 @@ function drawMap(data, page) {
   map.addListener("clickMapObject", function(event) {
     // for (var i in map.dataProvider.areas) {
     //   var area = map.dataProvider.areas[i];
-    //   if (area.showAsSelected) {  
+    //   if (area.showAsSelected) {
     //     //set a new color only if it wasn't assigned before
-    //     area.showAsSelected = false; 
+    //     area.showAsSelected = false;
     //   }
     // }
     // event.mapObject.showAsSelected = true;
@@ -203,7 +229,7 @@ function drawMap(data, page) {
 
     // checked "by month" radio
     checkRadioButtonDefault();
-    
+
     // update timeline and tables
     ajaxRequest(document.querySelector(".active").id, event.mapObject.id, '/update', true);
 
@@ -334,9 +360,9 @@ function drawTimeLine(data, regionSubtitle, budget) {
 function updateTable(tbody, obj) {
   var table = document.getElementById(tbody);
   table.innerHTML = '';
-  
+
   txt = '';
-  
+
   if (tbody === 'tbody-trans') {
     for (x in obj) {
       txt += `<tr><td>${obj[x].payer_name}</td><td>${obj[x].amount}</td><td>${obj[x].recipt_name}</td><td>${obj[x].doc_date}</td></tr>`
@@ -361,7 +387,10 @@ function checkRadioButtonDefault() {
 }
 
 function changeContainer(prev, current, val) {
-  if (((prev === 'ukravto') && (current == 'subvention')) || ((prev === 'subvention') && (current == 'ukravto'))) {
+  var arr_maps = ['ukravto', 'subvention', 'safety', 'experiment', 'other']
+  var arr_not_maps = ['porog', 'calculator']
+
+  if ((prev != current) && (arr_maps.includes(prev)) && (arr_maps.includes(current))) { // map -> map
     drawMap(dataMap['map'][val], parseInt(val));
 
     ajaxRequest(document.querySelector(".active").id, 'UA-05', '/update', true);
@@ -371,20 +400,25 @@ function changeContainer(prev, current, val) {
     changeLinkBigTable('UA-05', 'big-table-lots');
     changeLinkBigTable('UA-05', 'big-table-trans');
 
-  } else if (((prev === 'ukravto') && (current == 'porog')) || ((prev === 'subvention') && (current == 'porog'))) {
+  } else if (current == 'porog') { // * -> porog
     clearContainer();
 
     createTable();
-  } else if (((prev === 'porog') && (current == 'ukravto')) || ((prev === 'porog') && (current == 'subvention'))) {
+
+  } else if ((arr_not_maps.includes(prev)) && (arr_maps.includes(current))) { // porog|calculator -> map
     clearContainer();
 
     createContainer();
 
     drawMap(dataMap['map'][val], parseInt(val));
-    
+
     ajaxRequest(document.querySelector(".active").id, 'UA-05', '/update', true);
-    
+
     checkRadioButtonDefault();
+  } else if (current == 'calculator') { // * -> calculator
+    clearContainer();
+
+    createCalculator();
   } else {
     return // do nothing
   }
@@ -395,6 +429,41 @@ function clearContainer() {
   container.innerHTML = '';
 }
 
+function createCalculator() {
+    document.getElementById('dashboard-container').innerHTML = `
+    <div class="row">
+      <div class="col-12">
+        <div class="card" id="card-5">
+          <div class="card-header">
+            <h4 class="card-title" style="font-weight: bold;">Калькулятор</h4>
+          </div>
+          <div class="card-body">
+            <form id="form-calculator">
+                <div class="form-group">
+                  <label for="input1">Бензин</label>
+                  <input type="number" class="form-control" min="0" id="input1" value="0">
+                </div>
+                <div class="form-group">
+                  <label for="input2">Дизель</label>
+                  <input type="number" class="form-control" min="0" id="input2" value="0">
+                </div>
+                <button id="submit" type="submit" class="btn btn-info">Порахувати</button>
+            </form>
+          </div>
+          <div id="calculator-response"></div>
+        </div>
+        <div id="loader-5" class="loader-wrapper">
+          <div class="loader replicate"></div>
+        </div>
+      </div>
+    </div>
+    `;
+
+    $("#submit").click(function() {
+        ajaxRequestCalculator()
+    });
+}
+
 function changeLinkBigTable(regionId, button) {
   var link = document.getElementById(button);
   if (button == 'big-table-lots') {
@@ -403,16 +472,6 @@ function changeLinkBigTable(regionId, button) {
     var page = $('ul.nav li.active')[0].id;
     link.setAttribute('href', `transactions/${regionId}/${page}`);
   }
-}
-
-function showLoader(container, loader) {
-  $(container).css("opacity", "0.25");
-  $(loader).show();
-}
-
-function hideLoader(container, loader) {
-  $(loader).hide();
-  $(container).css("opacity", "1");
 }
 
 function createTable() {
@@ -509,7 +568,7 @@ var row = `<div class="row">
           </div>
         </div>
       </div>
-    </div>    
+    </div>
   </div>
   <div class="col-lg-6 col-md-12">
     <div class="card" id="card-1">
@@ -575,7 +634,7 @@ var row = `<div class="row">
     <div id="loader-2" class="loader-wrapper">
       <div class="loader replicate"></div>
     </div>
-  </div>          
+  </div>
   <!-- Transactions -->
   <div class="col-lg-6 col-md-12">
     <div class="card card-tasks" id="card-3">
@@ -615,4 +674,14 @@ var row = `<div class="row">
 
 document.getElementById('dashboard-container').innerHTML = row;
 
+}
+
+function showLoader(container, loader) {
+  $(container).css("opacity", "0.25");
+  $(loader).show();
+}
+
+function hideLoader(container, loader) {
+  $(loader).hide();
+  $(container).css("opacity", "1");
 }
