@@ -149,7 +149,11 @@ def index():
     other = _get_spending_data('other')
     experiment = _get_spending_data('experiment')
     safety = _get_spending_data('safety')
-    return render_template('index.html', map_ukr={'map': [ukravto, subvention, other, experiment, safety]})
+    return render_template('index.html', map_ukr={'ukravto': ukravto,
+                                                  'subvention': subvention,
+                                                  'other': other,
+                                                  'experiment': experiment,
+                                                  'safety': safety})
 
 
 @app.route('/start', methods=['POST'])
@@ -158,14 +162,16 @@ def start():
     page = request.form['page']
     if region and page:
         lots = Prozzoro.query.filter(Prozzoro.id_region == region)
+
         # fill in tables
-        trans = Transactions.query.filter(Transactions.id_region == region).filter(Transactions.kevk == 2281)
+        trans = Transactions.query.filter(Transactions.kevk == page)
 
         # launch timeline -> start regions is UA-05
         dates = db.session.query(Transactions.doc_date, label('sum', func.sum(Transactions.amount))).filter(
-            Transactions.id_region == region).filter(Transactions.kevk == 2281).group_by(Transactions.doc_date).all()
+            Transactions.id_region == region).filter(Transactions.kevk == page).group_by(Transactions.doc_date).all()
         dates = [(x[0][:7], x[1]) for x in dates]
         dates = [(x, sum(map(itemgetter(1), y))) for x, y in groupby(dates, itemgetter(0))]
+
         # cumulative values
         cum_vals = list(accumulate([i[1] for i in dates]))
 
@@ -191,67 +197,41 @@ def start():
 def update():
     region = request.form['region']
     page = request.form['page']
+
     lots = Prozzoro.query.filter(Prozzoro.id_region == region)
+    trans = Transactions.query.filter(Transactions.id_region == region).filter(Transactions.kevk == page)
 
-    if page == 'ukravto':
-        trans = Transactions.query.filter(Transactions.id_region == region).filter(Transactions.kevk == 2281)
+    dates = db.session.query(Transactions.doc_date, label('sum', func.sum(Transactions.amount))).filter(
+        Transactions.id_region == region).filter(Transactions.kevk == page).group_by(Transactions.doc_date).all()
+    dates = [(x[0][:7], x[1]) for x in dates]
+    dates = [(x, sum(map(itemgetter(1), y))) for x, y in groupby(dates, itemgetter(0))]
+    # cumulative values
+    cum_vals = list(accumulate([i[1] for i in dates]))
 
-        dates = db.session.query(Transactions.doc_date, label('sum', func.sum(Transactions.amount))).filter(
-            Transactions.id_region == region).filter(Transactions.kevk == 2281).group_by(Transactions.doc_date).all()
-        dates = [(x[0][:7], x[1]) for x in dates]
-        dates = [(x, sum(map(itemgetter(1), y))) for x, y in groupby(dates, itemgetter(0))]
-        # cumulative values
-        cum_vals = list(accumulate([i[1] for i in dates]))
+    # budget of the oblast
+    budget = regions_budgets[region][page] if page in ('ukravto', 'subvention') else ''
+    ratio = round(cum_vals[-1] * 100 / budget, 2) if budget else ''
 
-        # budget of the oblast
-        budget = regions_budgets[region][page]
-
-        return jsonify({
-            'trans': [serialize_trans(t) for t in trans.all()],
-            'lots': [serialize_lots(l) for l in lots.all()],
-            'dates': [[{"date": d[0], "value": round(d[1], 2), "budget": budget} for d in dates],
-                      [{"date": d[0], "value": round(c, 2), "budget": budget} for d, c in zip(dates, cum_vals)]],
-            'region': regs[region],
-            'budget': regions_budgets[region][page],
-            'spent': round(cum_vals[-1], 2),
-            'ratio': round(cum_vals[-1] * 100 / budget, 2),
-            'n_lots': lots.count(),
-            'n_trans': trans.count()
-        })
-    else:
-        trans = Transactions.query.filter(Transactions.id_region == region).filter(Transactions.kevk != 2281)
-
-        dates = db.session.query(Transactions.doc_date, label('sum', func.sum(Transactions.amount))).filter(
-            Transactions.id_region == region).filter(Transactions.kevk != 2281).group_by(Transactions.doc_date).all()
-
-        dates = [(x[0][:7], x[1]) for x in dates]
-        dates = [(x, sum(map(itemgetter(1), y))) for x, y in groupby(dates, itemgetter(0))]
-        # cumulative values
-        cum_vals = list(accumulate([i[1] for i in dates]))
-
-        # budget of the oblast
-        budget = regions_budgets[region][page]
-
-        return jsonify({
-            'trans': [serialize_trans(t) for t in trans.all()],
-            'lots': [serialize_lots(l) for l in lots.all()],
-            'dates': [[{"date": d[0], "value": round(d[1], 2), "budget": budget} for d in dates],
-                      [{"date": d[0], "value": round(c, 2), "budget": budget} for d, c in zip(dates, cum_vals)]],
-            'region': regs[region],
-            'budget': regions_budgets[region][page],
-            'spent': round(cum_vals[-1], 2),
-            'ratio': round(cum_vals[-1] * 100 / budget, 2),
-            'n_lots': lots.count(),
-            'n_trans': trans.count()
-        })
+    return jsonify({
+        'trans': [serialize_trans(t) for t in trans.all()],
+        'lots': [serialize_lots(l) for l in lots.all()],
+        'dates': [[{"date": d[0], "value": round(d[1], 2), "budget": budget if budget else 0} for d in dates],
+                  [{"date": d[0], "value": round(c, 2), "budget": budget if budget else 0} for d, c in zip(dates, cum_vals)]],
+        'region': regs[region],
+        'budget': budget,
+        'spent': round(cum_vals[-1], 2),
+        'ratio': ratio,
+        'n_lots': lots.count(),
+        'n_trans': trans.count()
+    })
 
 
 @app.route('/porog', methods=['POST'])
 def porog():
     lots = Prozzoro.query.all()
     return jsonify({
-        'lots': [[serialize_lots(l) for l in lots if l.porog == 'допороги'],
-                 [serialize_lots(l) for l in lots if l.porog == 'надпороги']]
+        'lots': [[serialize_lots(l) for l in lots if l.porog == 'doporog'],
+                 [serialize_lots(l) for l in lots if l.porog == 'nadporog']]
     })
 
 
@@ -265,10 +245,7 @@ def lots(region):
 @app.route('/transactions/<region>/<page>')
 def trans(region, page):
     oblast = regs[region]
-    if page == 'subvention':
-        trans = Transactions.query.filter(Transactions.id_region == region).filter(Transactions.kevk != 2281).all()
-        return render_template('transactions.html', trans=trans, oblast=oblast)
-    trans = Transactions.query.filter(Transactions.id_region == region).filter(Transactions.kevk == 2281).all()
+    trans = Transactions.query.filter(Transactions.id_region == region).filter(Transactions.kevk == page).all()
     return render_template('transactions.html', trans=trans, oblast=oblast)
 
 

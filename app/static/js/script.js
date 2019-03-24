@@ -1,7 +1,7 @@
 $(document).ready(function() {
 
   // launch map
-  drawMap(dataMap['map'][0], false);
+  drawMap(dataMap['ukravto'], false);
 
   // launch timeline and tables
   ajaxRequest('ukravto', 'UA-05', '/start', false);
@@ -14,7 +14,7 @@ $(document).ready(function() {
 
     var current = $(this).attr('id');
 
-    var val = $(this).val();
+    var val = $(this).data('value');
 
     changeContainer(previous, current, val);
 
@@ -92,7 +92,6 @@ function ajaxRequestPorog() {
     else {
 
       initDataTable(data.lots[0]);
-
       $('#porog-form').change(function(){
         var val = $('input[name=dataset-porog]:checked', '#porog-form').val();
         $('#data-table').empty();
@@ -196,7 +195,6 @@ function initDataTable(lots) {
 }
 
 function drawMap(data, page) {
-  var icon = page ? "icon-coins" : "icon-delivery-fast"
   var map = AmCharts.makeChart( "map", {
     "type": "map",
     "theme": "light",
@@ -210,7 +208,7 @@ function drawMap(data, page) {
       "selectable": true,
       "color": "#a4d1fc",
       "colorSolid": "#1770c6",
-      "balloonText": `<div class='wrapper-tooltip-title'><span class='map-tooltip-title'>[[title]]</span></div><div class='wrapper-tooltip-value'><span class='map-tooltip-value'><i class='tim-icons ${icon}'></i>  [[value]]%</span></div>`
+      "balloonText": `<div class='wrapper-tooltip-title'><span class='map-tooltip-title'>[[title]]</span></div><div class='wrapper-tooltip-value'><span class='map-tooltip-value'>[[value]] грн.</span></div>`
     },
     "baloon": {
       "verticalPadding": 10,
@@ -409,7 +407,7 @@ function changeContainer(prev, current, val) {
   var arr_not_maps = ['porog', 'calculator']
 
   if ((prev != current) && (arr_maps.includes(prev)) && (arr_maps.includes(current))) { // map -> map
-    drawMap(dataMap['map'][val], parseInt(val));
+    drawMap(dataMap[val], 1);
 
     ajaxRequest(document.querySelector(".active").id, 'UA-05', '/update', true);
 
@@ -428,7 +426,7 @@ function changeContainer(prev, current, val) {
 
     createContainer();
 
-    drawMap(dataMap['map'][val], parseInt(val));
+    drawMap(dataMap[val], parseInt(val));
 
     ajaxRequest(document.querySelector(".active").id, 'UA-05', '/update', true);
 
@@ -675,7 +673,7 @@ var row = `<div class="row">
     <div class="card">
       <div class="card-header" style="text-align: center;">
         <span class="map-title">Обсяг платежів за областями</span>
-        <span class="map-subtitle">Відношення суми платежів до бюджету</span>
+        <span class="map-subtitle">Всього витрачено у гривнях</span>
       </div>
       <div class="card-wrapper">
         <div id="map"></div>

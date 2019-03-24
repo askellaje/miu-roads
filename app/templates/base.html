@@ -36,34 +36,34 @@
 
         <div class="sidebar-wrapper">
             <ul class="nav">
-                <li class="nav-item active" id="ukravto" value="0">
+                <li class="nav-item active" id="ukravto" data-value="ukravto">
                     <a class="nav-link" href="#">
                         <i class="tim-icons icon-delivery-fast"></i>
                         <p class="navigation-page">Укравтодор</p>
                     </a>
                 </li>
-                <li class="nav-item" id="subvention" value="1">
+                <li class="nav-item" id="subvention" data-value="subvention">
                     <a class="nav-link" href="#">
                         <i class="tim-icons icon-coins"></i>
                         <p class="navigation-page">Субвенція</p>
                     </a>
                 </li>
-                <li class="nav-item" id="safety" value="1">
+                <li class="nav-item" id="safety" data-value="safety">
                     <a class="nav-link" href="#">
-                        <i class="tim-icons icon-coins"></i>
+                        <i class="tim-icons icon-lock-circle"></i>
                         <p class="navigation-page">Безпека</p>
                     </a>
                 </li>
-                <li class="nav-item" id="experiment" value="1">
+                <li class="nav-item" id="experiment" data-value="experiment">
                     <a class="nav-link" href="#">
-                        <i class="tim-icons icon-coins"></i>
-                        <p class="navigation-page">Митний експеримент</p>
+                        <i class="tim-icons icon-bulb-63"></i>
+                        <p class="navigation-page">Експеримент</p>
                     </a>
                 </li>
-                <li class="nav-item" id="other" value="1">
+                <li class="nav-item" id="other" data-value="other">
                     <a class="nav-link" href="#">
-                        <i class="tim-icons icon-coins"></i>
-                        <p class="navigation-page">Інші джерела фінансування</p>
+                        <i class="tim-icons icon-wallet-43"></i>
+                        <p class="navigation-page">Інші джерела</p>
                     </a>
                 </li>
                 <li class="nav-item" id="porog">
@@ -75,7 +75,7 @@
                 <li class="nav-item" id="calculator">
                     <a class="nav-link" href="#">
                         <i class="tim-icons icon-money-coins"></i>
-                        <p class="navigation-page">Калькулятор податків</p>
+                        <p class="navigation-page">Калькулятор</p>
                     </a>
                 </li>
                 <!-- your sidebar here -->
@@ -147,6 +147,5 @@
 <script type="text/javascript" src="{{ url_for('static', filename='js/amcharts-light.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/uk.js') }}"></script>
 {% endif %}
-
 </body>
 </html>
