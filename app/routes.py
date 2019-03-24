@@ -135,13 +135,6 @@ regions_trans = db.session.query(Transactions.id_region, Transactions.kevk,
                                  label('sum', func.sum(Transactions.amount))).group_by(Transactions.id_region,
                                                                                        Transactions.kevk).all()
 
-ukravto = [(i[0], round(i[2], 2)) for i in regions_trans if i[1] == 2281]
-ukravto = [{"id": t[0], "value": round((t[1] * 100) / regions_budgets[t[0]]['ukravto'], 2)} for t in ukravto]
-
-subvention = [(i[0], round(i[2], 2)) for i in regions_trans if i[1] != 2281]
-subvention = [(x, sum(map(itemgetter(1), y))) for x, y in groupby(subvention, itemgetter(0))]
-subvention = [{"id": t[0], "value": round((t[1] * 100) / regions_budgets[t[0]]['subvention'], 2)} for t in subvention]
-
 
 def _get_spending_data(spending_type):
     spending = [{'id': i[0], 'value': round(i[2], 2)} for i in regions_trans if i[1] == spending_type]
@@ -151,8 +144,12 @@ def _get_spending_data(spending_type):
 @app.route('/')
 @app.route('/index')
 def index():
-    print(_get_spending_data(2281))
-    return render_template('index.html', map_ukr={'map': [ukravto, subvention]})
+    ukravto = _get_spending_data('ukravto')
+    subvention = _get_spending_data('subvention')
+    other = _get_spending_data('other')
+    experiment = _get_spending_data('experiment')
+    safety = _get_spending_data('safety')
+    return render_template('index.html', map_ukr={'map': [ukravto, subvention, other, experiment, safety]})
 
 
 @app.route('/start', methods=['POST'])
